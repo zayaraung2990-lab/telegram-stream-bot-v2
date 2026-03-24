@@ -1,7 +1,7 @@
 import os
+import asyncio
 from telethon import TelegramClient, events
 from quart import Quart, Response
-import asyncio
 
 # Environment Variables
 API_ID = int(os.getenv("API_ID"))
@@ -9,7 +9,7 @@ API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 app = Quart(__name__)
-client = TelegramClient('bot_session', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+client = TelegramClient('bot_session', API_ID, API_HASH)
 
 @app.route('/')
 async def index():
@@ -39,12 +39,20 @@ async def stream(msg_id):
 @client.on(events.NewMessage)
 async def handler(event):
     if event.video:
-        # Render ကပေးတဲ့ URL ကို သုံးမှာဖြစ်လို့ Environment variable ထဲမှာ RENDER_EXTERNAL_HOSTNAME ပါရပါမယ်
         host = os.getenv('RENDER_EXTERNAL_HOSTNAME', 'your-app.onrender.com')
         link = f"https://{host}/stream/{event.message.id}"
         await event.reply(f"✅ Direct Link (2GB Support):\n\n{link}")
 
-if __name__ == "__main__":
+async def main():
+    # Bot ကို အရင် Start လုပ်ပါမယ်
+    await client.start(bot_token=BOT_TOKEN)
+    
+    # Server ကို Run ပါမယ်
     import uvicorn
     port = int(os.getenv("PORT", 10000))
-    client.loop.run_until_complete(uvicorn.run(app, host="0.0.0.0", port=port))
+    config = uvicorn.Config(app, host="0.0.0.0", port=port, loop="asyncio")
+    server = uvicorn.Server(config)
+    await server.serve()
+
+if __name__ == "__main__":
+    asyncio.run(main())
