@@ -14,26 +14,24 @@ RENDER_HOST = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 
 client = TelegramClient('bot_session', API_ID, API_HASH)
 
-# --- BOT SECTION: Link ထုတ်ပေးမည့်အပိုင်း ---
 @client.on(events.NewMessage)
 async def link_handler(event):
     if event.message.file:
         msg_id = event.message.id
-        # Direct Link တည်ဆောက်ခြင်း
         stream_link = f"https://{RENDER_HOST}/stream/{msg_id}"
-        await event.reply(f"🎬 **သင့်ဗီဒီယိုအတွက် Direct Link:**\n\n`{stream_link}`")
-    elif event.raw_text == "/start":
-        await event.reply("Welcome! ဗီဒီယိုဖိုင်တစ်ခု ပို့ပေးပါ၊ ကျွန်တော် Direct Link ထုတ်ပေးပါ့မယ်။")
+        await event.reply(f"🎬 **Direct Link:**\n\n`{stream_link}`")
 
-# --- SERVER SECTION: ဗီဒီယိုပြသမည့်အပိုင်း ---
 @app.route('/')
 async def index():
     return "Bot is Running Live!"
 
 @app.route('/stream/<int:msg_id>')
 async def stream(msg_id):
-    channel_id = int(os.getenv("CHANNEL_ID"))
+    # ဒီနေရာမှာ ဂဏန်းရော စာသားရော ရအောင် ပြင်လိုက်ပါပြီ
+    raw_channel_id = os.getenv("CHANNEL_ID")
     try:
+        channel_id = int(raw_channel_id) if raw_channel_id.replace('-', '').isdigit() else raw_channel_id
+        
         if not client.is_connected():
             await client.connect()
         
